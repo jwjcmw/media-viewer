@@ -19,6 +19,10 @@ export default function App() {
       const ws = new WebSocket("ws://localhost:9998");
       wsRef.current = ws;
 
+      ws.onopen = () => {
+        ws.send(JSON.stringify({ type: "ready" }));
+      };
+
       ws.onmessage = (ev) => {
         try {
           const msg = JSON.parse(ev.data);

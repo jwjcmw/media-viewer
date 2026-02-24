@@ -19,8 +19,21 @@ export function startWsServer(): void {
   wss.on("connection", (ws) => {
     socket = ws;
 
-    for (const resolve of connectionResolvers) resolve();
-    connectionResolvers = [];
+    // Wait for the UI to send a "ready" ping before resolving waiters.
+    // This ensures React's onmessage handler is registered before we sendFire.
+    ws.once("message", (raw) => {
+      try {
+        const msg = JSON.parse(String(raw));
+        if (msg.type === "ready") {
+          for (const resolve of connectionResolvers) resolve();
+          connectionResolvers = [];
+        }
+      } catch {
+        // fallback: resolve anyway
+        for (const resolve of connectionResolvers) resolve();
+        connectionResolvers = [];
+      }
+    });
 
     ws.on("message", (raw) => {
       try {
